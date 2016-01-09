@@ -23,7 +23,7 @@ image = gray
 faces = faceCascade.detectMultiScale(
     gray,
     scaleFactor=1.1,
-    minNeighbors=10,
+    minNeighbors=11,
     minSize=(20, 20),
     flags = cv2.CASCADE_SCALE_IMAGE
 )

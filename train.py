@@ -37,7 +37,7 @@ from sklearn.preprocessing import StandardScaler
 # 4) vypiseme si PCA maticu do suboru, aby sme ju mohli pouzivat
 # 5) spravime funkciu na nacitanie lubovolneho obrazku a jeho preskalovanie a naslednu klasifikaciu
 data_folder = './data'
-feature_count = 512
+feature_counts = [256, 2048]
 	
 def loadTrainData():
 	X = np.loadtxt(data_folder + '/images_data', dtype=float)		
@@ -53,36 +53,58 @@ def loadTrainData():
 
 	return X, y
 
+# poslednych 5 features riesi detekciu tvare
+def stripFaceDetectionData(x):
+	return x[0:-5]
+
 def separateTrainDataByFace(X, y):
+	# data pre klasifikator pracujuci s detekciou tvare
 	X_face = []
-	X_no_face = []
+	X_general = []
+	# data pre vseobecny klasifikator
 	y_face = []
-	y_no_face = []
+	y_general = []
 
 	for i in range(0, len(X)):
+		# posledny atribut urcuje, ci bola detekovana pri niektorom natoceni obrazka tvar
 		if (X[i][-1] != -1):
 			X_face.append(X[i])
 			y_face.append(y[i])
+
+			# odstranime data suvisiace s detekciou tvare, aby neskreslovali pri trenovani
+			# lebo hoci je na fotke tvar, stale su to cenne data pre vseobecny klasifikator
+			X_general.append(stripFaceDetectionData(X[i]))
+			y_general.append(y[i])
 		else:
-			X_no_face.append(X[i])
-			y_no_face.append(y[i])
+			# odstranime data suvisiace s detekciou tvare, aby neskreslovali pri trenovani
+			X_general.append(stripFaceDetectionData(X[i]))
+			y_general.append(y[i])
 
-	y_face = np.array(y_face)
-	y_no_face = np.array(y_no_face)
 	X_face = np.array(X_face)
-	X_no_face = np.array(X_no_face)
-	print "face: " + str(len(X_face)) + " no face: " + str(len(X_no_face))
+	y_face = np.array(y_face)
+	X_general = np.array(X_general)
+	y_general = np.array(y_general)
 
-	#return [X_face, X_no_face], [y_face, y_no_face]
-	return [X], [y]
+	print "face: " + str(len(X_face)) + " general: " + str(len(X_general))
 
-def reduceDimmensionalityOfData(X, y):
+	return [X_face, X_general], [y_face, y_general]
+	#return [X], [y]
+
+def filterFeatures(X, y, feature_count):
 	best_feature_selector = SelectKBest(f_classif, k = feature_count)
 	data_scaler = StandardScaler().fit(X)
 
 	X_new = best_feature_selector.fit_transform(X, y)
 	X_new = data_scaler.fit_transform(X_new)
 	return X_new, best_feature_selector, data_scaler
+
+def pcaReduction(X, features_count):
+	pca = PCA(n_components = features_count)
+	data = preprocessing.scale(X)
+	pca.fit(random.sample(X, 1000))
+	X_new = [pca.transform(x)[0] for x in data]
+	X_new = preprocessing.scale(X_new)
+	return X_new, pca	
 
 def drange(start, stop, step):
 	r = start
@@ -114,7 +136,7 @@ def train(X, y):
 	avg_score = scores.mean()
 	print "eclf: " + str(avg_score)
 
-	for a in drange(0.001, 0.003, 0.0001):
+	for a in drange(0.001, 0.002, 0.0001):
 		sys.stderr.write("C: " + str(a) + "\n")# + " gamma: " + str(g) + "r: " + str(c0) + "\n")
 		clf = svm.SVC(C=a, kernel='linear')
 		scores = cross_validation.cross_val_score(clf, X, y)	
@@ -133,6 +155,7 @@ print "Finished loading"
 print "Dimmensionality reduction in progress..."
 
 for i in range(0, len(images_groups)):
-	data_transformed, feature_selector, data_scaler = reduceDimmensionalityOfData(images_groups[i], rotations_groups[i])
+	data_transformed, feature_selector, data_scaler = filterFeatures(images_groups[i], rotations_groups[i], feature_counts[i])
+	data_transformed, pca = pcaReduction(data_transformed, 32)
 	print "Finished dimmensionality reduction"
 	train(data_transformed, rotations_groups[i])

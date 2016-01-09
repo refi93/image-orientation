@@ -49,11 +49,12 @@ for filename in images:
 	counter += 1
 	print filename
 	print img_face_rotation_data
+	print guessed_rotation_by_faces
 	print >> sys.stderr, str(counter)
 	#else:
 	#	print filename + " has a face"
-	if counter > 500:
-		break
+	#if counter > 500:
+	#	break
 
 
 np.savetxt(images_data_output_file, img_data_arr)
