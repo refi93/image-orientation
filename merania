@@ -1,0 +1,4 @@
+samples, hog cell size, PCA components
+
+300, 32x32, 32, 55 (sobel)
+300, 32x32, 32, 54.9 (scharr)

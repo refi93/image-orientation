@@ -11,13 +11,17 @@ import numpy as np
 
 
 #image = color.rgb2gray(data.astronaut())
-image = Image.open('original_images/indoor/257971_2008934073530_6552451_o.jpg').resize((512, 512), Image.ANTIALIAS).convert('L')
+image = Image.open('original_images/26978_1344888035678_7713599_n.jpg').resize((512, 512), Image.ANTIALIAS).convert('L')
 image = sobel(image)
-#image = feature.canny(np.array(image))
+for r in range(0, len(image)):
+	for c in range(0, len(image[0])):
+		if image[r][c] <= 0.04:
+			image[r][c] = 0
+#image = feature.canny(np.array(image), sigma=1.01)
 #enh = ImageEnhance.Sharpness(image)
 #image = enh.enhance(3)
 
-fd, hog_image = hog(image, orientations=20, pixels_per_cell=(16, 16),
+fd, hog_image = hog(image, orientations=20, pixels_per_cell=(32, 32),
                     cells_per_block=(1, 1), visualise=True, normalise=True)
 
 print fd
