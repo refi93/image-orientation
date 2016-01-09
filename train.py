@@ -37,7 +37,6 @@ from sklearn.preprocessing import StandardScaler
 # 4) vypiseme si PCA maticu do suboru, aby sme ju mohli pouzivat
 # 5) spravime funkciu na nacitanie lubovolneho obrazku a jeho preskalovanie a naslednu klasifikaciu
 data_folder = './data'
-feature_counts = [256, 2048]
 	
 def loadTrainData():
 	X = np.loadtxt(data_folder + '/images_data', dtype=float)		
@@ -112,7 +111,10 @@ def drange(start, stop, step):
 		yield r
 		r += step
 
-def train(X, y):
+def trainWithFaceData(X, y):
+	X, feature_selector, data_scaler = filterFeatures(X, y, 256)
+	#X, pca = pcaReduction(data_transformed, 32)
+
 	sys.stderr.write("Training started\n")	
 	best_a = -1
 	best_score = 0
@@ -147,15 +149,46 @@ def train(X, y):
 			best_a = a
 	sys.stderr.write("SVM got on training data cross-validation score " + str(best_score) + "; C=" + str(best_a) + "\n")
 
+def trainGeneral(X, y):
+	X, feature_selector, data_scaler = filterFeatures(X, y, 2048)
+	X, pca = pcaReduction(X, 32)
+
+	sys.stderr.write("Training started\n")	
+	best_a = -1
+	best_score = 0
+	#clf1 = AdaBoostClassifier(svm.SVC(probability=True,kernel='poly', degree=2), n_estimators=1)
+	#scores = cross_validation.cross_val_score(clf1, X, y)
+	#print scores.mean() 	
+	#clf2 = AdaBoostClassifier(svm.SVC(probability=True,kernel='linear'), n_estimators=50)
+	#scores = cross_validation.cross_val_score(clf2, X, y)
+	#print scores.mean() 	
+	#clf3 = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2), n_estimators=200, learning_rate=0.5)
+	#scores = cross_validation.cross_val_score(clf3, X, y)
+	#print scores.mean() 	
+	#clf4 = KNeighborsClassifier(80)
+	#scores = cross_validation.cross_val_score(clf4, X, y)
+	#print scores.mean()
+	clf5 = RandomForestClassifier(max_depth=20, n_estimators=500, max_features=3)
+	scores = cross_validation.cross_val_score(clf5, X, y)
+	print scores.mean()
+
+	for a in drange(0.001, 0.002, 0.0001):
+		sys.stderr.write("C: " + str(a) + "\n")# + " gamma: " + str(g) + "r: " + str(c0) + "\n")
+		clf = svm.SVC(C=a, kernel='linear')
+		scores = cross_validation.cross_val_score(clf, X, y)	
+		avg_score = scores.mean()
+		print avg_score
+		if (avg_score > best_score):
+			best_score = avg_score
+			best_a = a
+	sys.stderr.write("SVM got on training data cross-validation score " + str(best_score) + "; C=" + str(best_a) + "\n")
+
+
 
 print "Loading images..."
 images, rotations = loadTrainData()
 images_groups, rotations_groups = separateTrainDataByFace(images, rotations)
 print "Finished loading"
-print "Dimmensionality reduction in progress..."
 
-for i in range(0, len(images_groups)):
-	data_transformed, feature_selector, data_scaler = filterFeatures(images_groups[i], rotations_groups[i], feature_counts[i])
-	data_transformed, pca = pcaReduction(data_transformed, 32)
-	print "Finished dimmensionality reduction"
-	train(data_transformed, rotations_groups[i])
+trainGeneral(images_groups[1], rotations_groups[1])
+trainWithFaceData(images_groups[0], rotations_groups[0])
