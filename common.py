@@ -15,6 +15,10 @@ from resizeimage import resizeimage
 faceCascPath = 'haarcascade_frontalface_default.xml'
 faceCascade = cv2.CascadeClassifier(faceCascPath)
 
+# poslednych 5 features riesi detekciu tvare
+def stripFaceDetectionData(x):
+	return x[0:-5]
+
 def imgToGray(img):
 	return img.convert('L')
 
@@ -110,8 +114,7 @@ def preprocess(img):
 	bw_img = imgToGrayAndResize(img, 512)
 	scharr_image = arrayThreshold(scharr(bw_img), 0.04) # ocistime obrazok od slabych pixlov, aby sa trebars dal lahsie spoznat horizont
 	#canny_image = feature.canny(np.array(bw_img))
-	hog1 = feature.hog(scharr_image, orientations=16, pixels_per_cell=(32, 32), cells_per_block=(1, 1), normalise = True, visualise=False)	
-	hog2 = []#feature.hog(sobel_image, orientations=20, pixels_per_cell=(32, 32), cells_per_block=(1, 1), normalise = True, visualise=False)
+	hog = feature.hog(scharr_image, orientations=16, pixels_per_cell=(32, 32), cells_per_block=(1, 1), normalise = True, visualise=False)	
 	
 	image_blocks = vectorBlockshaped(np.array(bw_img), 128, 128)
 	blocks_color_histogram = []
@@ -122,5 +125,8 @@ def preprocess(img):
 
 	blocks_color_histogram = np.array(blocks_color_histogram).ravel()
 		
-	return hog1, hog2, blocks_color_histogram
+	img_face_rotation_data, guessed_rotation_by_faces = np.array(getFaceCountByRotation(img))
+
+		
+	return hog, blocks_color_histogram, img_face_rotation_data, guessed_rotation_by_faces
 

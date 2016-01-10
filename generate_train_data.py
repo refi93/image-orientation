@@ -40,8 +40,7 @@ for filename in images:
 	img = img.rotate(rotation)	
 	rotations_output_file.write(str(rotation) + '\n')	
 
-	hog_1, hog_2, color_histogram = common.preprocess(img)
-	img_face_rotation_data, guessed_rotation_by_faces = np.array(common.getFaceCountByRotation(img))
+	hog_1, color_histogram, img_face_rotation_data, guessed_rotation_by_faces = common.preprocess(img)
 
 	img_data = np.concatenate((hog_1, hog_2, color_histogram, img_face_rotation_data, [guessed_rotation_by_faces])).ravel()
 	img_data_arr.append(img_data)

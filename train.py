@@ -29,6 +29,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2, f_classif
 from sklearn.preprocessing import StandardScaler
+from sklearn.externals import joblib
 
 
 # 1) nacitame obrazky z trenovacej mnoziny
@@ -52,10 +53,6 @@ def loadTrainData():
 
 	return X, y
 
-# poslednych 5 features riesi detekciu tvare
-def stripFaceDetectionData(x):
-	return x[0:-5]
-
 def separateTrainDataByFace(X, y):
 	# data pre klasifikator pracujuci s detekciou tvare
 	X_face = []
@@ -70,14 +67,10 @@ def separateTrainDataByFace(X, y):
 			X_face.append(X[i])
 			y_face.append(y[i])
 
-			# odstranime data suvisiace s detekciou tvare, aby neskreslovali pri trenovani
-			# lebo hoci je na fotke tvar, stale su to cenne data pre vseobecny klasifikator
-			X_general.append(stripFaceDetectionData(X[i]))
-			y_general.append(y[i])
-		else:
-			# odstranime data suvisiace s detekciou tvare, aby neskreslovali pri trenovani
-			X_general.append(stripFaceDetectionData(X[i]))
-			y_general.append(y[i])
+		# odstranime data suvisiace s detekciou tvare, aby neskreslovali pri trenovani
+		# lebo hoci je na fotke tvar, stale su to cenne data pre vseobecny klasifikator
+		X_general.append(common.stripFaceDetectionData(X[i]))
+		y_general.append(y[i])
 
 	X_face = np.array(X_face)
 	y_face = np.array(y_face)
@@ -91,18 +84,19 @@ def separateTrainDataByFace(X, y):
 
 def filterFeatures(X, y, feature_count):
 	best_feature_selector = SelectKBest(f_classif, k = feature_count)
-	data_scaler = StandardScaler().fit(X)
 
 	X_new = best_feature_selector.fit_transform(X, y)
-	X_new = data_scaler.fit_transform(X_new)
-	return X_new, best_feature_selector, data_scaler
+	return X_new, best_feature_selector
+
+def scale(X):
+	data_scaler = StandardScaler().fit(X)
+	X_new = data_scaler.fit_transform(X)
+	return X_new, data_scaler
 
 def pcaReduction(X, features_count):
 	pca = PCA(n_components = features_count)
-	data = preprocessing.scale(X)
 	pca.fit(random.sample(X, 1000))
-	X_new = [pca.transform(x)[0] for x in data]
-	X_new = preprocessing.scale(X_new)
+	X_new = pca.transform(X)
 	return X_new, pca	
 
 def drange(start, stop, step):
@@ -112,65 +106,38 @@ def drange(start, stop, step):
 		r += step
 
 def trainWithFaceData(X, y):
-	X, feature_selector, data_scaler = filterFeatures(X, y, 256)
+	X, feature_selector = filterFeatures(X, y, 128)
+	X, data_scaler = scale(X)
+
+	joblib.dump(feature_selector, 'saved_models/face_feature_selector.pkl', compress=9)
+	joblib.dump(data_scaler, 'saved_models/face_data_scaler.pkl', compress=9)
+
 	#X, pca = pcaReduction(data_transformed, 32)
 
 	sys.stderr.write("Training started\n")	
 	best_a = -1
 	best_score = 0
-	#clf1 = AdaBoostClassifier(svm.SVC(probability=True,kernel='poly', degree=2), n_estimators=1)
-	#scores = cross_validation.cross_val_score(clf1, X, y)
-	#print scores.mean() 	
-	#clf2 = AdaBoostClassifier(svm.SVC(probability=True,kernel='linear'), n_estimators=50)
-	#scores = cross_validation.cross_val_score(clf2, X, y)
-	#print scores.mean() 	
-	#clf3 = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2), n_estimators=200, learning_rate=0.5)
-	#scores = cross_validation.cross_val_score(clf3, X, y)
-	#print scores.mean() 	
-	clf4 = KNeighborsClassifier(80)
-	scores = cross_validation.cross_val_score(clf4, X, y)
-	print scores.mean()
-	clf5 = RandomForestClassifier(max_depth=20, n_estimators=500, max_features=3)
-	scores = cross_validation.cross_val_score(clf5, X, y)
-	print scores.mean()
-	clf6 = BaggingClassifier(KNeighborsClassifier(80), max_samples=0.7, max_features=0.7)
-	scores = cross_validation.cross_val_score(clf6, X, y)	
+
+	clf = RandomForestClassifier(max_depth=20, n_estimators=256, max_features=10)
+	scores = cross_validation.cross_val_score(clf, X, y)	
+	clf.fit(X, y)
+	joblib.dump(clf, 'saved_models/face_classifier.pkl', compress=9)
+
 	avg_score = scores.mean()
 	print "eclf: " + str(avg_score)
 
-	for a in drange(0.001, 0.002, 0.0001):
-		sys.stderr.write("C: " + str(a) + "\n")# + " gamma: " + str(g) + "r: " + str(c0) + "\n")
-		clf = svm.SVC(C=a, kernel='linear')
-		scores = cross_validation.cross_val_score(clf, X, y)	
-		avg_score = scores.mean()
-		print avg_score
-		if (avg_score > best_score):
-			best_score = avg_score
-			best_a = a
-	sys.stderr.write("SVM got on training data cross-validation score " + str(best_score) + "; C=" + str(best_a) + "\n")
-
 def trainGeneral(X, y):
-	X, feature_selector, data_scaler = filterFeatures(X, y, 2048)
+	X, feature_selector = filterFeatures(X, y, 2048)
+	X, data_scaler = scale(X)
 	X, pca = pcaReduction(X, 32)
+	joblib.dump(feature_selector, 'saved_models/general_feature_selector.pkl', compress=9)
+	joblib.dump(data_scaler, 'saved_models/general_data_scaler.pkl', compress=9)
+	joblib.dump(pca, 'saved_models/general_pca_reducer.pkl', compress=9)
+
 
 	sys.stderr.write("Training started\n")	
 	best_a = -1
 	best_score = 0
-	#clf1 = AdaBoostClassifier(svm.SVC(probability=True,kernel='poly', degree=2), n_estimators=1)
-	#scores = cross_validation.cross_val_score(clf1, X, y)
-	#print scores.mean() 	
-	#clf2 = AdaBoostClassifier(svm.SVC(probability=True,kernel='linear'), n_estimators=50)
-	#scores = cross_validation.cross_val_score(clf2, X, y)
-	#print scores.mean() 	
-	#clf3 = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2), n_estimators=200, learning_rate=0.5)
-	#scores = cross_validation.cross_val_score(clf3, X, y)
-	#print scores.mean() 	
-	#clf4 = KNeighborsClassifier(80)
-	#scores = cross_validation.cross_val_score(clf4, X, y)
-	#print scores.mean()
-	clf5 = RandomForestClassifier(max_depth=20, n_estimators=500, max_features=3)
-	scores = cross_validation.cross_val_score(clf5, X, y)
-	print scores.mean()
 
 	for a in drange(0.001, 0.002, 0.0001):
 		sys.stderr.write("C: " + str(a) + "\n")# + " gamma: " + str(g) + "r: " + str(c0) + "\n")
@@ -181,6 +148,11 @@ def trainGeneral(X, y):
 		if (avg_score > best_score):
 			best_score = avg_score
 			best_a = a
+	
+	clf = svm.SVC(C=best_a, kernel='linear')
+	clf.fit(X, y)
+	joblib.dump(clf, 'saved_models/general_classifier.pkl', compress=9)
+
 	sys.stderr.write("SVM got on training data cross-validation score " + str(best_score) + "; C=" + str(best_a) + "\n")
 
 
@@ -190,5 +162,5 @@ images, rotations = loadTrainData()
 images_groups, rotations_groups = separateTrainDataByFace(images, rotations)
 print "Finished loading"
 
-trainGeneral(images_groups[1], rotations_groups[1])
 trainWithFaceData(images_groups[0], rotations_groups[0])
+trainGeneral(images_groups[1], rotations_groups[1])
