@@ -1,4 +1,5 @@
 from PIL import Image
+import os
 from os import walk
 from os import path
 from os import makedirs
@@ -8,11 +9,11 @@ import numpy as np
 from skimage.filters import roberts, sobel, scharr, prewitt
 from skimage import feature
 import cv2
-from resizeimage import resizeimage
 
 
+abs_path = os.path.dirname(os.path.abspath(__file__))
 # subor, kde su ulozene udaje potrebne na detekciu tvari
-faceCascPath = 'haarcascade_frontalface_default.xml'
+faceCascPath = abs_path + '/haarcascade_frontalface_default.xml'
 faceCascade = cv2.CascadeClassifier(faceCascPath)
 
 # poslednych 5 features riesi detekciu tvare
@@ -44,6 +45,7 @@ def face_detect(img):
 		minSize=(20, 20),
 		flags = cv2.CASCADE_SCALE_IMAGE
 	)
+	print faces
 	return faces
 
 # funkcia v pripade, ze na obrazku img najde tvare, vrati rotaciu img vzhladom na spravne zrotovany obrazok

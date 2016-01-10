@@ -35,24 +35,25 @@ def hasFace(x):
 	return x[-1] != -1
 
 def loadFaceClassifier():
-	feature_selector = joblib.load('saved_models/face_feature_selector.pkl')
-	data_scaler = joblib.load('saved_models/face_data_scaler.pkl')
-	clf = joblib.load('saved_models/face_classifier.pkl')
+	feature_selector = joblib.load(common.abs_path + '/saved_models/face_feature_selector.pkl')
+	data_scaler = joblib.load(common.abs_path + '/saved_models/face_data_scaler.pkl')
+	clf = joblib.load(common.abs_path + '/saved_models/face_classifier.pkl')
 	return feature_selector, data_scaler, clf
 
 def loadGeneralClassifier():
-	feature_selector = joblib.load('saved_models/general_feature_selector.pkl')
-	data_scaler = joblib.load('saved_models/general_data_scaler.pkl')
-	pca = joblib.load('saved_models/general_pca_reducer.pkl')
-	clf = joblib.load('saved_models/general_classifier.pkl')
+	feature_selector = joblib.load(common.abs_path + '/saved_models/general_feature_selector.pkl')
+	data_scaler = joblib.load(common.abs_path + '/saved_models/general_data_scaler.pkl')
+	pca = joblib.load(common.abs_path + '/saved_models/general_pca_reducer.pkl')
+	clf = joblib.load(common.abs_path + '/saved_models/general_classifier.pkl')
 
 	return feature_selector, data_scaler, pca, clf
 
 def predict(x):
 	if hasFace(x):
 		feature_selector, data_scaler, clf = loadFaceClassifier()
+		print x[-5:]
 		x = data_scaler.transform(feature_selector.transform(x))
-		return clf.predict(x)
+		return clf.predict(x)[0]
 	else:
 		feature_selector, data_scaler, pca, clf = loadGeneralClassifier()
 		
