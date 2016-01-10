@@ -11,4 +11,4 @@ Po jeho spusteni sa zacnu iterovat fotografie v zlozke a jedna po druhej spracov
 
 O trenovanie sa stara subor [train.py](https://github.com/refi93/image-orientation/blob/master/train.py). Najde optimalne modely pre klasifikatory a ulozi ich do zlozky saved_models.
 
-Klasifikacia potom prebieha tak, ze spustime subor [predict.py](https://github.com/refi93/image-orientation/blob/master/predict.py) a ako parameter mu dame cestu k fotografii, o ktorej chceme vediet jej orientaciu.
+Klasifikacia potom prebieha tak, ze spustime subor [predict.py](https://github.com/refi93/image-orientation/blob/master/predict.py) a ako parameter mu dame cestu k fotografii, o ktorej chceme vediet jej orientaciu. Predtym ale musime spustit trenovanie, resp. mat v zlozke saved_models ulozene prislusne klasifikatory.
