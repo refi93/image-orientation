@@ -51,7 +51,6 @@ def loadGeneralClassifier():
 def predict(x):
 	if hasFace(x):
 		feature_selector, data_scaler, clf = loadFaceClassifier()
-		print x[-5:]
 		x = data_scaler.transform(feature_selector.transform(x))
 		return clf.predict(x)[0]
 	else:

@@ -45,7 +45,6 @@ def face_detect(img):
 		minSize=(20, 20),
 		flags = cv2.CASCADE_SCALE_IMAGE
 	)
-	print faces
 	return faces
 
 # funkcia v pripade, ze na obrazku img najde tvare, vrati rotaciu img vzhladom na spravne zrotovany obrazok
