@@ -50,6 +50,7 @@ def loadGeneralClassifier():
 
 def predict(x):
 	if hasFace(x):
+		x = [x]
 		feature_selector, data_scaler, clf = loadFaceClassifier()
 		x = data_scaler.transform(feature_selector.transform(x))
 		return clf.predict(x)[0]
@@ -57,6 +58,7 @@ def predict(x):
 		feature_selector, data_scaler, pca, clf = loadGeneralClassifier()
 		
 		x = common.stripFaceDetectionData(x)
+		x = [x]
 		# selekcia vlastnosti a naskalovanie
 		x = data_scaler.transform(feature_selector.transform(x))
 		# pca redukcia dimenzii
