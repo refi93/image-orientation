@@ -1,7 +1,6 @@
 # Machine learning based determination of image orientation
 
-Python implementation of classifiers to determine the right image orientation. 
-Link (temporary): http://ec2-50-112-139-180.us-west-2.compute.amazonaws.com/
+Python implementation of classifiers to determine the right image orientation.
 
 We used mainly SVM and PCA dimmensionality reduction. The images were transformed by sobel edge detection and then we computed their histogram of gradients, we also splitted the original image into 4x4 squares and computed the color histogram for each of them. We also used face detection (Haar cascades) implemented in the opencv library. We gained accuracy 60% in general case on our set of images and on images, where we detected one or more faces, the accuracy was more than 80%.
 
